@@ -1,6 +1,8 @@
 package com.ssrodriguez.speechrhythm;
 
 import android.content.Context;
+import android.os.Build;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -64,6 +66,8 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+        bpmText.setText(getString(R.string.bpm, bpmActual));
     }
 
     private void startMetronome()
@@ -71,7 +75,12 @@ public class MainActivity extends AppCompatActivity {
         vibrating = true;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         pattern[2] = Math.round(((float)60000 / (float)bpmActual)) - pattern[1];
-        vibrator.vibrate(pattern, 0);
+        if (Build.VERSION.SDK_INT >= 26) {
+            vibrator.vibrate(VibrationEffect.createWaveform(new long[]{100, 100}, new int[]{255, 0}, 0));
+        }
+        else {
+            vibrator.vibrate(pattern, 0);
+        }
     }
     private void stopMetronome()
     {

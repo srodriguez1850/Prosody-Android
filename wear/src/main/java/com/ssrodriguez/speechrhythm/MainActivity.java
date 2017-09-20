@@ -1,12 +1,13 @@
 package com.ssrodriguez.speechrhythm;
 
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.input.RotaryEncoder;
 import android.support.wearable.view.BoxInsetLayout;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -149,7 +150,12 @@ public class MainActivity extends WearableActivity implements CounterHandler.Cou
         vibrating = true;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         pattern[2] = Math.round(((float)60000 / (float)bpmActual)) - pattern[1];
-        vibrator.vibrate(pattern, 0);
+        if (Build.VERSION.SDK_INT >= 26) {
+            vibrator.vibrate(VibrationEffect.createWaveform(new long[]{100, 100}, new int[]{255, 0}, 0));
+        }
+        else {
+            vibrator.vibrate(pattern, 0);
+        }
     }
 
     private void stopMetronome()
