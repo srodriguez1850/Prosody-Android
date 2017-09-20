@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="toggle_off">APGR</string>
+    <string name="toggle_on">ENCDR</string>
+    <string name="bpm">%d LPM</string>
+</resources>

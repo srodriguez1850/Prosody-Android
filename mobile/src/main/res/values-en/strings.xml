@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="toggle_off">OFF</string>
+    <string name="toggle_on">ON</string>
+    <string name="bpm">%d BPM</string>
+</resources>
