@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">SpeechRhythm</string>
+    <string name="app_name" translatable="false">Prosody</string>
     <string name="bpm">%d BPM</string>
     <string name="toggle_on">ON</string>
     <string name="toggle_off">OFF</string>

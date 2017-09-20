@@ -1,4 +1,4 @@
-package com.ssrodriguez.speechrhythm;
+package io.sebas.prosody;
 
 import org.junit.Test;
 

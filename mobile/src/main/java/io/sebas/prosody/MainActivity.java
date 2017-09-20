@@ -1,19 +1,27 @@
-package com.ssrodriguez.speechrhythm;
+package io.sebas.prosody;
 
 import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.View;
+import android.util.Log;
 import android.view.WindowManager;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
+
+    SensorManager sensorManager;
+    Sensor heartRateSensor;
+    //boolean hasHeartRateSensor = false;
 
     SeekBar bpmSeekbar;
     TextView bpmText;
@@ -34,15 +42,28 @@ public class MainActivity extends AppCompatActivity {
         toggleVibrationButton = (ToggleButton) findViewById(R.id.toggleButton);
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
+        /*
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
+        if (Build.VERSION.SDK_INT >= 20) {
+            heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
+            //Log.d("heartRateSensor", heartRateSensor.toString());
+            Log.d("SensorTypes", sensorManager.getSensorList(Sensor.TYPE_HEART_BEAT).toString());
+            hasHeartRateSensor = true;
+        }
+        */
+
         toggleVibrationButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked)
                 {
+                    //startHeartMeasure();
                     startMetronome();
                 }
                 else
                 {
+                    //stopHeartMeasure();
                     stopMetronome();
                 }
             }
@@ -68,6 +89,42 @@ public class MainActivity extends AppCompatActivity {
         });
 
         bpmText.setText(getString(R.string.bpm, bpmActual));
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        //sensorManager.unregisterListener(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    private void startHeartMeasure()
+    {
+        boolean sensorRegistered = sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_FASTEST);
+        Log.d("Sensor Status", " Sensor registered: " + (sensorRegistered ? "yes" : "no"));
+    }
+
+    private void stopHeartMeasure()
+    {
+        sensorManager.unregisterListener(this);
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_HEART_RATE) {
+            float heartRateF = sensorEvent.values[0];
+            int heartRate = Math.round(heartRateF);
+            bpmText.setText(getString(R.string.bpm, heartRate));
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
     }
 
     private void startMetronome()

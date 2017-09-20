@@ -1,4 +1,4 @@
-package com.ssrodriguez.speechrhythm;
+package io.sebas.prosody;
 
 /**
  * Created by Sebastian on 9/19/2017.
