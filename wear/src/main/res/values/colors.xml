@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="button_active">#388e3c</color>
+    <color name="button_inactive">#616161</color>
+    <color name="progress_bar_color">#00c853</color>
+</resources>

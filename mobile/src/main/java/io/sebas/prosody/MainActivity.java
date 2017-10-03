@@ -1,13 +1,19 @@
 package io.sebas.prosody;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
+import android.os.Handler;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,9 +25,12 @@ import android.widget.ToggleButton;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
+    private static final int PERMISSION_HEART_RATE_MONITOR = 1;
+    boolean hrmPermission = false;
+
     SensorManager sensorManager;
     Sensor heartRateSensor;
-    //boolean hasHeartRateSensor = false;
+    boolean gotHeartRate = false;
 
     SeekBar bpmSeekbar;
     TextView bpmText;
@@ -37,34 +46,31 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.BODY_SENSORS}, PERMISSION_HEART_RATE_MONITOR);
+        }
+        else {
+            hrmPermission = true;
+            initializeSensorManager();
+        }
+
         bpmSeekbar = (SeekBar) findViewById(R.id.bpmSeekbar);
         bpmText = (TextView) findViewById(R.id.bpmText);
         toggleVibrationButton = (ToggleButton) findViewById(R.id.toggleButton);
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-
-        /*
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= 20) {
-            heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
-            //Log.d("heartRateSensor", heartRateSensor.toString());
-            Log.d("SensorTypes", sensorManager.getSensorList(Sensor.TYPE_HEART_BEAT).toString());
-            hasHeartRateSensor = true;
-        }
-        */
 
         toggleVibrationButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked)
                 {
-                    //startHeartMeasure();
-                    startMetronome();
+                    startHeartMeasure();
+                    //startMetronome();
                 }
                 else
                 {
-                    //stopHeartMeasure();
-                    stopMetronome();
+                    stopHeartMeasure();
+                    //stopMetronome();
                 }
             }
         });
@@ -94,32 +100,75 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onPause() {
         super.onPause();
-        //sensorManager.unregisterListener(this);
+        if (sensorManager != null && hrmPermission) { sensorManager.unregisterListener(this); }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        //sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        if (sensorManager != null && hrmPermission) { sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL); }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_HEART_RATE_MONITOR) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                hrmPermission = true;
+                initializeSensorManager();
+            }
+        }
+    }
+
+    private void initializeSensorManager()
+    {
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
+        //Log.d("SensorTypes", sensorManager.getSensorList(Sensor.TYPE_HEART_RATE).toString());
     }
 
     private void startHeartMeasure()
     {
-        boolean sensorRegistered = sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_FASTEST);
-        Log.d("Sensor Status", " Sensor registered: " + (sensorRegistered ? "yes" : "no"));
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                confirmListener();
+            }
+        });
+        t.start();
+    }
+
+    private void confirmListener()
+    {
+        sensorManager.unregisterListener(this);
+        boolean sensorRegistered;
+        do {
+            try { Thread.sleep(1000); }
+            catch (Exception e) { Log.e("confirmListener", e.toString()); }
+            sensorRegistered = sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            Log.d("Sensor Status", " Sensor registered: " + (sensorRegistered ? "yes" : "no"));
+        } while (!sensorRegistered);
     }
 
     private void stopHeartMeasure()
     {
         sensorManager.unregisterListener(this);
+        stopMetronome();
+        gotHeartRate = false;
     }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        if (sensorEvent.sensor.getType() == Sensor.TYPE_HEART_RATE) {
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_HEART_RATE && !gotHeartRate) {
             float heartRateF = sensorEvent.values[0];
             int heartRate = Math.round(heartRateF);
-            bpmText.setText(getString(R.string.bpm, heartRate));
+            if (heartRate > 0) {
+                bpmActual = heartRate;
+                bpmText.setText(getString(R.string.bpm, heartRate));
+                gotHeartRate = true;
+                sensorManager.unregisterListener(this);
+                startMetronome();
+            }
         }
     }
 
