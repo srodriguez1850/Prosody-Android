@@ -11,13 +11,14 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
-import android.support.wear.widget.BoxInsetLayout;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.input.RotaryEncoder;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -35,17 +36,19 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     Vibrator vibrator;
 
     // UI variables
-    BoxInsetLayout mContainerView;
+    ConstraintLayout mContainerView;
     FloatingActionButton heartButton;
     FloatingActionButton bpmButton;
     CircleProgressBar bpmProgressBar;
     TextView bpmText;
     ProgressBar hrLoading;
+    ImageButton buttonFaster;
 
     // Activity vars
     boolean hasHeartRateSensor = false;     // Is here a heart rate sensor?
     boolean heartActive = false;            // Metronome (heart rate) active
     boolean bpmActive = false;              // Metronome (manual) active
+    boolean bpmMultiplied = false;          // Is the BPM multiplied?
     boolean vibrating = false;              // Is the device vibrating
     int bpmActual;                          // Actual BPM for metronome
     long[] pattern = { 0, 100, 100 };       // Vibration pattern (API <25)
@@ -75,9 +78,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         // Get views from layout
-        mContainerView = (BoxInsetLayout) findViewById(R.id.mcontainer);
+        mContainerView = (ConstraintLayout) findViewById(R.id.mcontainer);
         heartButton = (FloatingActionButton) findViewById(R.id.buttonHeart);
         bpmButton = (FloatingActionButton) findViewById(R.id.buttonTime);
+        buttonFaster = (ImageButton) findViewById(R.id.buttonFaster);
         bpmProgressBar = (CircleProgressBar) findViewById(R.id.bpmProgressBar);
         bpmText = (TextView) findViewById(R.id.bpmText);
         bpmText.setText(getString(R.string.bpm, bpmActual));        // Set BPM text on load
@@ -97,8 +101,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                         // Turn off measurement and metronome
                         stopHeartMeasure();
                         stopMetronome();
-                        // Remove bpm and loading texts
-                        //bpmText.setVisibility(View.INVISIBLE);
+                        // Remove faster and loading views
+                        buttonFaster.setVisibility(View.INVISIBLE);
                         hrLoading.setVisibility(View.INVISIBLE);
                         // Restore bpm text
                         bpmText.setVisibility(View.VISIBLE);
@@ -170,6 +174,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 // Turn off other button
                 heartActive = false;
                 heartButton.setBackgroundTintList(ColorStateList.valueOf(getColor(R.color.button_inactive)));
+                bpmMultiplied = false;
+                buttonFaster.setVisibility(View.INVISIBLE);
                 // Stop metronome
                 stopMetronome();
                 // Turn on current button
@@ -237,6 +243,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             bpmActual = heartRate;
             sensorManager.unregisterListener(this);
             hrLoading.setVisibility(View.INVISIBLE);
+            buttonFaster.setVisibility(View.VISIBLE);
             bpmText.setVisibility(View.VISIBLE);
             bpmText.setText(getString(R.string.bpm, heartRate));
             setProgressBar(bpmActual);
@@ -246,6 +253,28 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
+    }
+    //endregion
+
+    //region Public Methods
+    public void multiplyBpm(View v)
+    {
+        if (bpmMultiplied) {
+            bpmMultiplied = false;
+            stopMetronome();
+            bpmActual /= 2;
+            buttonFaster.setBackgroundTintList(ColorStateList.valueOf(getColor(R.color.button_inactive)));
+            bpmText.setText(getString(R.string.bpm, bpmActual));
+            startMetronome();
+        }
+        else {
+            bpmMultiplied = true;
+            stopMetronome();
+            bpmActual *= 2;
+            buttonFaster.setBackgroundTintList(ColorStateList.valueOf(getColor(R.color.button_active)));
+            bpmText.setText(getString(R.string.bpm, bpmActual));
+            startMetronome();
+        }
     }
     //endregion
 
