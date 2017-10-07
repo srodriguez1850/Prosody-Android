@@ -264,6 +264,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             stopMetronome();
             bpmActual /= 2;
             buttonFaster.setBackgroundTintList(ColorStateList.valueOf(getColor(R.color.button_inactive)));
+            setProgressBar(bpmActual);
             bpmText.setText(getString(R.string.bpm, bpmActual));
             startMetronome();
         }
@@ -272,6 +273,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             stopMetronome();
             bpmActual *= 2;
             buttonFaster.setBackgroundTintList(ColorStateList.valueOf(getColor(R.color.button_active)));
+            setProgressBar(bpmActual);
             bpmText.setText(getString(R.string.bpm, bpmActual));
             startMetronome();
         }
