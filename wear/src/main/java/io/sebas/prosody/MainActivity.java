@@ -19,6 +19,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -28,6 +29,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     // Define minimum and maximum bpm (heart rate will be between these)
     public static final int MAXIMUM_BPM = 300;
     public static final int MINIMUM_BPM = 1;
+    // Display progress bar for bpm (false, circular pb isn't compatible with square/roundchin)
+    public static final boolean DISPLAY_BPM_PROGRESSBAR = false;
 
     // System variables
     SharedPreferences preferences;
@@ -83,6 +86,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         bpmButton = (FloatingActionButton) findViewById(R.id.buttonTime);
         buttonFaster = (ImageButton) findViewById(R.id.buttonFaster);
         bpmProgressBar = (CircleProgressBar) findViewById(R.id.bpmProgressBar);
+        if (DISPLAY_BPM_PROGRESSBAR) ((LinearLayout) findViewById(R.id.llayout)).setVisibility(View.VISIBLE);
         bpmText = (TextView) findViewById(R.id.bpmText);
         bpmText.setText(getString(R.string.bpm, bpmActual));        // Set BPM text on load
         hrLoading = (ProgressBar) findViewById(R.id.hrLoading);
