@@ -279,13 +279,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private class BpmGestureListener extends GestureDetector.SimpleOnGestureListener {
         @Override
         public boolean onDown(MotionEvent e) {
-            //Log.d("bpmGestureListener", "onDown: " + e.toString());
             return true;
         }
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            //Log.d("bpmGestureListener", "onScroll: X-" + String.valueOf(distanceX) + " Y-" + String.valueOf(distanceY));
+            if (BuildConfig.DEBUG) Log.d("bpmGestureListener", "onScroll: X-" + String.valueOf(distanceX) + " Y-" + String.valueOf(distanceY));
             if (!heartActive && !bpmActive) {
                 bpmActual += Math.round(distanceY * GESTUREEVENT_BPM_SCALE);
                 if (bpmActual > MAXIMUM_BPM) { bpmActual = MAXIMUM_BPM; }
@@ -331,7 +330,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         hrLoading.setVisibility(View.VISIBLE);
         // Register listener for heart rate events
         boolean sensorRegistered = sensorManager.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_FASTEST);
-        //Log.d("Sensor Status", " Sensor registered: " + (sensorRegistered ? "yes" : "no"));
+        if (BuildConfig.DEBUG) Log.d("Sensor Status", " Sensor registered: " + (sensorRegistered ? "yes" : "no"));
     }
 
     private void stopHeartMeasure()
