@@ -15,6 +15,8 @@ import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.input.RotaryEncoder;
+import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -31,12 +33,16 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     public static final int MINIMUM_BPM = 1;
     // Display progress bar for bpm (false, circular pb isn't compatible with square/roundchin)
     public static final boolean DISPLAY_BPM_PROGRESSBAR = false;
+    // Factor of motion events when changing bpm
+    public static final float ROTARYHANDLER_BPM_SCALE = 0.25f;
+    public static final float GESTUREEVENT_BPM_SCALE = 0.25f;
 
     // System variables
     SharedPreferences preferences;
     SensorManager sensorManager;
     Sensor heartRateSensor;
     Vibrator vibrator;
+    GestureDetector gestureDetector;
 
     // UI variables
     ConstraintLayout mContainerView;
@@ -72,6 +78,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
         // Get vibrator
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        // Set gesture detector
+        gestureDetector = new GestureDetector(this, new BpmGestureListener());
 
         // Load layout depending if we find a heart rate sensor
         if (heartRateSensor == null) setContentView(R.layout.activity_main_noheart);
@@ -82,6 +90,12 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         // Get views from layout
         mContainerView = (ConstraintLayout) findViewById(R.id.mcontainer);
+        mContainerView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                return MainActivity.this.gestureDetector.onTouchEvent(motionEvent); // Set gesture listener on background
+            }
+        });
         heartButton = (FloatingActionButton) findViewById(R.id.buttonHeart);
         bpmButton = (FloatingActionButton) findViewById(R.id.buttonTime);
         buttonFaster = (ImageButton) findViewById(R.id.buttonFaster);
@@ -221,7 +235,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         if (event.getAction() == MotionEvent.ACTION_SCROLL && RotaryEncoder.isFromRotaryEncoder(event) && !heartActive && !bpmActive) {
             // Negate the encoder, divide by 4 to scale
             float delta = -RotaryEncoder.getRotaryAxisValue(event) * RotaryEncoder.getScaledScrollFactor(getApplicationContext());
-            int dInt = Math.round(delta / 4);
+            int dInt = Math.round(delta * ROTARYHANDLER_BPM_SCALE);
+
             // Ensure we're within bounds
             bpmActual += dInt;
             if (bpmActual > MAXIMUM_BPM) { bpmActual = MAXIMUM_BPM; }
@@ -257,6 +272,29 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
+    }
+    //endregion
+
+    //region Gesture Listeners
+    private class BpmGestureListener extends GestureDetector.SimpleOnGestureListener {
+        @Override
+        public boolean onDown(MotionEvent e) {
+            //Log.d("bpmGestureListener", "onDown: " + e.toString());
+            return true;
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            //Log.d("bpmGestureListener", "onScroll: X-" + String.valueOf(distanceX) + " Y-" + String.valueOf(distanceY));
+            if (!heartActive && !bpmActive) {
+                bpmActual += Math.round(distanceY * GESTUREEVENT_BPM_SCALE);
+                if (bpmActual > MAXIMUM_BPM) { bpmActual = MAXIMUM_BPM; }
+                else if (bpmActual < MINIMUM_BPM) { bpmActual = MINIMUM_BPM; }
+                bpmText.setText(getString(R.string.bpm, bpmActual));
+                return true;
+            }
+            return false;
+        }
     }
     //endregion
 
